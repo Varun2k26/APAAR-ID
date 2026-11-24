@@ -1,0 +1,47 @@
+// Screenshot tour of every role's main pages (read-only apart from sign-in audit entries).
+import { BASE, launch, newPage, problems, sleep, login, studentLogin } from "./lib.mjs";
+const out = new URL("./shots/tour_", import.meta.url).pathname;
+const browser = await launch();
+const go = async (p, path, name, wait = 1800) => { await p.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" }); await sleep(wait); await p.screenshot({ path: `${out}${name}.png` }); };
+try {
+  const pub = await newPage(browser, "public");
+  await go(pub, "/login", "01_login", 1200);
+  await go(pub, "/mock-digilocker", "02_digilocker", 1000);
+  const a = await newPage(browser, "aicte");
+  await login(a, "aicte.admin");
+  await go(a, "/aicte", "03_aicte_overview", 2500);
+  await a.screenshot({ path: `${out}03b_aicte_overview_full.png`, fullPage: true });
+  await go(a, "/aicte/institutions", "04_institutions");
+  await go(a, "/aicte/institutions/60", "05_institution_detail");
+  await go(a, "/aicte/anomalies", "06_anomalies");
+  await go(a, "/aicte/anomalies?focus=" + (await a.evaluate(async () => (await (await fetch("/api/v1/anomalies?kind=FILL_RATE_JUMP", { headers: { Authorization: "Bearer " + localStorage.getItem("spine.token") } })).json())[0].id)), "07_anomaly_detail");
+  await go(a, "/aicte/conflicts", "08_conflicts");
+  await go(a, "/aicte/audit", "09_audit");
+  await go(a, "/aicte/system", "10_admin");
+  const op = await newPage(browser, "inst");
+  await login(op, "admin.aarohan");
+  await go(op, "/institution", "11_inst_overview");
+  await go(op, "/institution/students", "12_inst_students");
+  await go(op, "/institution/upload", "13_inst_upload");
+  await go(op, "/institution/add", "14_inst_add");
+  await go(op, "/institution/requests", "15_inst_requests");
+  await go(op, "/institution/integration", "16_inst_integration");
+  const st = await newPage(browser, "student");
+  await studentLogin(st, "Kavya Senthil");
+  await go(st, "/student", "17_student_home");
+  await go(st, "/student/wallet", "18_student_wallet");
+  await go(st, "/student/access", "19_student_access");
+  const reg = await newPage(browser, "reg");
+  await login(reg, "naac.auditor");
+  await go(reg, "/regulator", "20_regulator");
+  const uni = await newPage(browser, "uni");
+  await login(uni, "registrar.tnstu");
+  await go(uni, "/university", "21_university");
+  await go(pub, "/verify", "22_verify_empty", 800);
+  const m = await newPage(browser, "mobile");
+  await login(m, "admin.aarohan");
+  await m.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
+  await go(m, "/institution", "23_mobile_inst");
+} catch (e) { console.error("TOUR FAILED:", e.message); }
+console.log("PROBLEMS:\n" + (problems.join("\n") || "none"));
+await browser.close();

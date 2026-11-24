@@ -1,0 +1,3 @@
+{ "name": "apaar-registry-e2e", "private": true, "type": "module",
+  "scripts": { "e2e": "node stage1.mjs && node stage2.mjs" },
+  "dependencies": { "puppeteer-core": "23.6.0" } }
